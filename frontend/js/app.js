@@ -7,6 +7,7 @@ class VoiceConversationApp {
         this.mediaCapture = new MediaCaptureManager();
         this.client = new ConversationClient();
         this.audioPlayer = new AudioStreamPlayer();
+        this.live2dController = new Live2DController();
 
         this.isConversationActive = false;
         this.currentTranscriptRole = null;
@@ -21,6 +22,9 @@ class VoiceConversationApp {
     async init() {
         this.ui.init();
         this.setupEventListeners();
+
+        // Initialize Live2D
+        await this.live2dController.init(this.audioPlayer);
 
         console.log('Application initialized');
     }

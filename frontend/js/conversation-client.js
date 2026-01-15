@@ -2,7 +2,7 @@
  * Conversation Client for communicating with backend
  */
 class ConversationClient {
-    constructor(baseURL = 'http://localhost:8000') {
+    constructor(baseURL = 'http://localhost:8001') {
         this.baseURL = baseURL;
         this.eventSource = null;
         this.sessionId = null;

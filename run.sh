@@ -12,7 +12,7 @@ echo "Checking dependencies..."
 pip install -r backend/requirements.txt -q
 
 # Start the backend server
-echo "Starting backend server on http://localhost:8000"
-echo "Frontend available at http://localhost:8000 (served by FastAPI)"
+echo "Starting backend server on http://localhost:8001"
+echo "Frontend available at http://localhost:8001 (served by FastAPI)"
 cd backend
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
