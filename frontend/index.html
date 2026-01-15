@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI语音对话系统</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Panel: AI Robot -->
+        <div class="left-panel">
+            <div class="ai-avatar">
+                <div class="avatar-icon">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="50" fill="#4A90E2" />
+                        <circle cx="45" cy="50" r="8" fill="white" />
+                        <circle cx="75" cy="50" r="8" fill="white" />
+                        <path d="M 40 75 Q 60 85 80 75" stroke="white" stroke-width="4" fill="none"
+                            stroke-linecap="round" />
+                    </svg>
+                </div>
+                <h2>AI助手</h2>
+            </div>
+
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">准备中...</span>
+            </div>
+
+            <div class="transcript-area">
+                <h3>对话内容</h3>
+                <div id="transcriptDisplay" class="transcript-content"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel: User Video -->
+        <div class="right-panel">
+            <div class="video-container">
+                <video id="userVideo" autoplay playsinline muted></video>
+                <div class="video-overlay" id="videoOverlay">
+                    <p>点击下方按钮开始对话</p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary">开始对话</button>
+                <button id="recordBtn" class="btn btn-record" disabled>按住说话</button>
+                <button id="stopBtn" class="btn btn-danger" disabled>停止</button>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-item">
+                    <span class="label">会话ID:</span>
+                    <span id="sessionId">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">状态:</span>
+                    <span id="stateDisplay">未连接</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>错误</h2>
+            <p id="errorMessage"></p>
+            <button id="errorOkBtn" class="btn btn-primary">确定</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/ui-controller.js"></script>
+    <script src="/static/js/media-capture.js"></script>
+    <script src="/static/js/conversation-client.js"></script>
+    <script src="/static/js/audio-player.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
