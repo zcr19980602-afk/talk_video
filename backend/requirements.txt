@@ -22,3 +22,6 @@ hypothesis>=6.92.0
 
 # Environment
 python-dotenv>=1.0.0
+
+# Computer Vision
+opencv-python-headless>=4.8.0

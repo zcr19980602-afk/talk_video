@@ -6,6 +6,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from typing import Optional
 
 from .conversation_manager import ConversationManager
@@ -58,6 +59,21 @@ frontend_path = Path(__file__).parent.parent.parent / "frontend"
 if frontend_path.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
     logger.info(f"Serving frontend from: {frontend_path}")
+
+# Mount mp4 directory for playback
+mp4_path = Path("mp4")
+mp4_path.mkdir(exist_ok=True)
+app.mount("/mp4", StaticFiles(directory="mp4"), name="mp4")
+
+
+@app.get("/analysis")
+async def analysis_page():
+    """Serve analysis page."""
+    from fastapi.responses import FileResponse
+    analysis_path = frontend_path / "analysis.html"
+    if analysis_path.exists():
+        return FileResponse(str(analysis_path))
+    return {"message": "Analysis page not found"}
 
 
 @app.get("/")
@@ -279,6 +295,92 @@ async def get_history(
         logger.error(f"Error getting history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/upload-video")
+async def upload_video(
+    file: UploadFile = File(...)
+):
+    """
+    Upload recorded video file.
+    """
+    try:
+        # Create mp4 directory if it doesn't exist
+        # Save to project root 'mp4' folder
+        save_dir = Path("mp4")
+        save_dir.mkdir(exist_ok=True)
+        
+        # Generate filename with timestamp if original filename is generic
+        import time
+        timestamp = int(time.time())
+        filename = f"video_{timestamp}_{file.filename}"
+        file_path = save_dir / filename
+        
+        logger.info(f"Saving video to: {file_path}")
+        
+        with open(file_path, "wb") as buffer:
+            import shutil
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"filename": str(file_path), "status": "success"}
+        
+    except Exception as e:
+        logger.error(f"Error saving video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/videos")
+async def list_videos():
+    """List available video recordings."""
+    try:
+        save_dir = Path("mp4")
+        if not save_dir.exists():
+            return []
+            
+        videos = []
+        for file in save_dir.glob("*.mp4"):
+            videos.append({
+                "filename": file.name,
+                "created_at": file.stat().st_mtime,
+                "size": file.stat().st_size
+            })
+        
+        # Sort by creation time desc
+        videos.sort(key=lambda x: x["created_at"], reverse=True)
+        return videos
+    except Exception as e:
+        logger.error(f"Error listing videos: {e}")
+        return []
+
+class AnalyzeRequest(BaseModel):
+    filename: str
+    prompt: Optional[str] = "Please analyze this video frame and describe what you see."
+
+@app.post("/api/analyze")
+async def analyze_video(request: AnalyzeRequest):
+    """Analyze video using Hierarchical Summarization (Step 0-3)."""
+    try:
+        video_path = Path("mp4") / request.filename
+        if not video_path.exists():
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        # Initialize Analyzer with Zhipu API Key from Config
+        from .analyzer import VideoAnalyzer
+        analyzer = VideoAnalyzer(api_key=config.zhipu_api_key)
+        
+        # Execute Hierarchical Analysis
+        result = await analyzer.analyze(video_path)
+        
+        return result
+            
+    except Exception as e:
+        logger.error(f"Error analyzing video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

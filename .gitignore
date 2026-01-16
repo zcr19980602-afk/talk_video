@@ -29,6 +29,9 @@ wheels/
 # IDEs
 .idea/
 .vscode/
+.opencode/
+.shared/
+.kiro/
 *.swp
 *.swo
 
@@ -37,3 +40,6 @@ wheels/
 
 # Logs
 *.log
+
+# Media files
+backend/mp4/

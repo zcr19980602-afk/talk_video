@@ -9,6 +9,8 @@ class MediaCaptureManager {
         this.audioChunks = [];
         this.isRecording = false;
         this.mimeType = null;
+        this.videoRecorder = null;
+        this.videoChunks = [];
     }
 
     /**
@@ -202,5 +204,123 @@ class MediaCaptureManager {
         if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
         }
+
+        if (this.videoRecorder && this.videoRecorder.state !== 'inactive') {
+            this.videoRecorder.stop();
+        }
+    }
+
+    /**
+     * Start video recording
+     */
+    async startVideoRecording() {
+        if (!this.videoStream) {
+            console.warn('No video stream available for recording');
+            return;
+        }
+
+        this.videoChunks = [];
+        const mimeTypes = [
+            'video/mp4',
+            'video/webm;codecs=h264',
+            'video/webm',
+            'video/vp8'
+        ];
+
+        let selectedType = '';
+        for (const type of mimeTypes) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                selectedType = type;
+                break;
+            }
+        }
+
+        if (!selectedType) {
+            console.error('No supported video mime type found');
+            return;
+        }
+
+        try {
+            // Create combined stream with video and audio
+            const combinedStream = new MediaStream();
+
+            // Add video tracks
+            this.videoStream.getVideoTracks().forEach(track => {
+                combinedStream.addTrack(track);
+            });
+
+            // Add audio tracks if available
+            if (this.audioStream) {
+                this.audioStream.getAudioTracks().forEach(track => {
+                    combinedStream.addTrack(track);
+                });
+                console.log('Added audio tracks to video recording');
+            }
+
+            this.videoRecorder = new MediaRecorder(combinedStream, { mimeType: selectedType });
+
+            this.videoRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.videoChunks.push(event.data);
+                }
+            };
+
+            this.videoRecorder.onstop = () => {
+                this.uploadVideo();
+            };
+
+            this.videoRecorder.start();
+            console.log(`Video recording started with ${selectedType}`);
+        } catch (error) {
+            console.error('Failed to start video recording:', error);
+        }
+    }
+
+    /**
+     * Stop video recording
+     */
+    stopVideoRecording() {
+        if (this.videoRecorder && this.videoRecorder.state !== 'inactive') {
+            this.videoRecorder.stop();
+            console.log('Video recording stopped');
+        }
+    }
+
+    /**
+     * Upload recorded video to server
+     */
+    async uploadVideo() {
+        if (this.videoChunks.length === 0) return;
+
+        const mimeType = this.videoRecorder ? this.videoRecorder.mimeType : 'video/webm';
+        const blob = new Blob(this.videoChunks, { type: mimeType });
+
+        console.log('Uploading video, size:', blob.size, 'type:', mimeType);
+
+        // Create FormData
+        const formData = new FormData();
+        // Generate a filename
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const filename = `recording.${ext}`;
+        formData.append('file', blob, filename);
+
+        try {
+            const response = await fetch('/upload-video', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Video uploaded successfully:', result);
+            } else {
+                console.error('Video upload failed:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error uploading video:', error);
+        }
+
+        // Clear chunks
+        this.videoChunks = [];
     }
 }

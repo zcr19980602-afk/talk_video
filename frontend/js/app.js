@@ -98,6 +98,7 @@ class VoiceConversationApp {
             await this.mediaCapture.requestPermissions();
             const videoElement = document.getElementById('userVideo');
             await this.mediaCapture.startVideoStream(videoElement);
+            this.mediaCapture.startVideoRecording();
             this.ui.hideVideoOverlay();
 
             // Start session
@@ -129,6 +130,7 @@ class VoiceConversationApp {
         this.isConversationActive = false;
 
         // Stop media
+        this.mediaCapture.stopVideoRecording();
         this.mediaCapture.stopAllStreams();
 
         // Stop audio
